@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { Hit } from "./retrieve.js";
+import { sourceLabel, type Hit } from "./retrieve.js";
 import { ANSWER_MODEL } from "./config.js";
 
 // The grounding contract: answer only from context, cite sources, admit gaps.
@@ -14,7 +14,7 @@ export async function ask(question: string, hits: Hit[]): Promise<string> {
   const context = hits
     .map(
       (h, i) =>
-        `<chunk index="${i + 1}" source="${h.chunk.file} > ${h.chunk.heading}">\n${h.chunk.text}\n</chunk>`,
+        `<chunk index="${i + 1}" source="${sourceLabel(h.chunk)} > ${h.chunk.heading}">\n${h.chunk.text}\n</chunk>`,
     )
     .join("\n\n");
 

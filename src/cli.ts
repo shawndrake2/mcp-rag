@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { readdirSync, statSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { chunkMarkdown, embedText, type Chunk } from "./chunk.js";
 import { LocalEmbedder } from "./embed.js";
-import { openDb, clearChunks, insertChunks } from "./store.js";
-import { retrieve } from "./retrieve.js";
+import { openDb, clearRoot, insertChunks } from "./store.js";
+import { retrieve, sourceLabel } from "./retrieve.js";
 
 const [cmd, ...rest] = process.argv.slice(2);
 
@@ -29,19 +29,22 @@ function* walk(dir: string): Generator<string> {
 
 async function indexCorpus(dir: string): Promise<void> {
   if (!dir) throw new Error("usage: npm run rag -- index <corpus-dir>");
+  // The resolved absolute path identifies this corpus; re-indexing it
+  // replaces only its own chunks (see clearRoot).
+  const root = resolve(dir);
   const chunks: Chunk[] = [];
-  for (const path of walk(dir)) {
-    chunks.push(...chunkMarkdown(relative(dir, path), readFileSync(path, "utf8")));
+  for (const path of walk(root)) {
+    chunks.push(...chunkMarkdown(relative(root, path), readFileSync(path, "utf8")));
   }
-  console.log(`chunked: ${chunks.length} chunks`);
+  console.log(`chunked: ${chunks.length} chunks from ${root}`);
 
   const embedder = new LocalEmbedder();
   const db = openDb();
-  clearChunks(db);
+  clearRoot(db, root);
   for (let i = 0; i < chunks.length; i += 32) {
     const batch = chunks.slice(i, i + 32);
     const vectors = await embedder.embedDocuments(batch.map(embedText));
-    insertChunks(db, batch, vectors);
+    insertChunks(db, root, batch, vectors);
     process.stdout.write(
       `\rembedded: ${Math.min(i + 32, chunks.length)}/${chunks.length}`,
     );
@@ -52,7 +55,7 @@ async function indexCorpus(dir: string): Promise<void> {
 async function queryCmd(q: string): Promise<void> {
   const hits = await retrieve(openDb(), new LocalEmbedder(), q);
   for (const h of hits) {
-    console.log(`\n[${h.score.toFixed(3)}] ${h.chunk.file} > ${h.chunk.heading}`);
+    console.log(`\n[${h.score.toFixed(3)}] ${sourceLabel(h.chunk)} > ${h.chunk.heading}`);
     const preview = h.chunk.text.slice(0, 280).replaceAll("\n", " ");
     console.log(preview + (h.chunk.text.length > 280 ? "…" : ""));
   }

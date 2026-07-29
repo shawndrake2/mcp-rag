@@ -3,7 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { openDb } from "./store.js";
 import { LocalEmbedder } from "./embed.js";
-import { retrieve } from "./retrieve.js";
+import { retrieve, sourceLabel } from "./retrieve.js";
 
 // Agentic RAG: the retrieval pipeline behind an MCP tool. The connected
 // model decides when to search, what query to send, and whether to search
@@ -35,7 +35,7 @@ export async function serve(): Promise<void> {
       const text = hits
         .map(
           (h) =>
-            `[score ${h.score.toFixed(3)}] ${h.chunk.file} > ${h.chunk.heading}\n${h.chunk.text}`,
+            `[score ${h.score.toFixed(3)}] ${sourceLabel(h.chunk)} > ${h.chunk.heading}\n${h.chunk.text}`,
         )
         .join("\n\n---\n\n");
       return { content: [{ type: "text" as const, text: text || "No results." }] };
