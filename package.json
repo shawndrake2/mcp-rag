@@ -1,0 +1,24 @@
+{
+  "name": "mcp-rag",
+  "version": "0.1.0",
+  "description": "RAG over a local markdown corpus, exposed as an MCP tool",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "rag": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
+    "@huggingface/transformers": "^3.7.0",
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "better-sqlite3": "^12.2.0",
+    "gray-matter": "^4.0.3",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  }
+}
