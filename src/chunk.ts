@@ -34,6 +34,22 @@ export function chunkMarkdown(relPath: string, raw: string): Chunk[] {
   return chunks;
 }
 
+// Contextual retrieval: what gets EMBEDDED is the chunk text prefixed with
+// where it came from - file path, heading, and scalar frontmatter facts.
+// Metadata like dates and employers often lives only in frontmatter, so
+// without this the best source chunk for a question may not contain the
+// words that would match it. The stored text stays raw; only the vector
+// carries the context.
+export function embedText(c: Chunk): string {
+  const facts = Object.entries(c.meta)
+    .filter(([, v]) => typeof v === "string" || typeof v === "number")
+    .map(([k, v]) => `${k}: ${v}`)
+    .join("; ");
+  return [`source: ${c.file} > ${c.heading}`, facts, c.text]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function splitLong(text: string): string[] {
   if (text.length <= MAX_CHUNK_CHARS) return [text];
   const paras = text.split(/\n{2,}/);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readdirSync, statSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { chunkMarkdown, type Chunk } from "./chunk.js";
+import { chunkMarkdown, embedText, type Chunk } from "./chunk.js";
 import { LocalEmbedder } from "./embed.js";
 import { openDb, clearChunks, insertChunks } from "./store.js";
 import { retrieve } from "./retrieve.js";
@@ -40,7 +40,7 @@ async function indexCorpus(dir: string): Promise<void> {
   clearChunks(db);
   for (let i = 0; i < chunks.length; i += 32) {
     const batch = chunks.slice(i, i + 32);
-    const vectors = await embedder.embedDocuments(batch.map((c) => c.text));
+    const vectors = await embedder.embedDocuments(batch.map(embedText));
     insertChunks(db, batch, vectors);
     process.stdout.write(
       `\rembedded: ${Math.min(i + 32, chunks.length)}/${chunks.length}`,
